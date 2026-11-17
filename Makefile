@@ -13,7 +13,11 @@ C_SRCS := kernel/main.c \
           $(wildcard kernel/drivers/*.c) \
           $(wildcard kernel/mm/*.c) 
 
-OBJS := $(ENTRY_OBJ) $(patsubst %.c, build/%.o, $(C_SRCS))
+ASM_SRCS := $(filter-out kernel/arch/boot.asm, $(wildcard kernel/arch/*.asm))
+
+OBJS := $(ENTRY_OBJ) \
+		$(patsubst %.asm, build/%.o, $(ASM_SRCS)) \
+		$(patsubst %.c, build/%.o, $(C_SRCS)) 
 DEPS := $(OBJS:.o=.d)
 
 KERNEL_ELF := build/kernel.elf
@@ -26,6 +30,10 @@ all: $(OS_ISO)
 
 # Explicitly assemble NASM boot.asm
 $(ENTRY_OBJ): kernel/arch/boot.asm
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) $< -o $@ 
+
+build/kernel/%.o: kernel/%.asm
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
