@@ -1,7 +1,7 @@
-# GoOS
+# Hydra
 
-GoOS is a small x86 operating-system experiment. Its current boot sector is
-written in 16-bit NASM assembly and prints `Welcome to GoOS!` when started.
+Hydra is a small x86 operating-system experiment. Its current boot sector is
+written in 16-bit NASM assembly and prints `Welcome to Hydra!` when started.
 The kernel directory is a placeholder; the build does not yet compile or load
 a kernel.
 

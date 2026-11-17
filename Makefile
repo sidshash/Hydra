@@ -1,33 +1,57 @@
-ASM=nasm
-BUILD=build
+CC := i686-elf-gcc
+LD := i686-elf-ld
+AS := nasm
 
-.PHONY: all init clean bootloader kernel floppy_image
+ASFLAGS := -f elf32
+CFLAGS  := -ffreestanding -masm=intel -O2 -Wall -Wextra -Ikernel/include -MMD -MP
+LDFLAGS := -T kernel/linker.ld -nostdlib
 
-all: init bootloader kernel floppy_image
+ENTRY_OBJ := build/kernel/arch/boot.o
 
-init:
-	mkdir -p $(BUILD)
+C_SRCS := kernel/main.c \
+          $(wildcard kernel/core/*.c) \
+          $(wildcard kernel/drivers/*.c) \
+          $(wildcard kernel/mm/*.c) 
 
-bootloader: $(BUILD)/bootloader.bin
+OBJS := $(ENTRY_OBJ) $(patsubst %.c, build/%.o, $(C_SRCS))
+DEPS := $(OBJS:.o=.d)
 
-$(BUILD)/bootloader.bin: bootloader/bootloader.asm
-	$(ASM) -f bin bootloader/bootloader.asm -o $(BUILD)/bootloader.bin
+KERNEL_ELF := build/kernel.elf
+OS_ISO     := build/os.iso
 
-kernel:
-	# Add your kernel build steps here if needed
 
-floppy_image: $(BUILD)/floppy.img
+.PHONY: all run clean
 
-$(BUILD)/floppy.img: $(BUILD)/bootloader.bin
-	#Create a zeroed out blank image file inside the build folder
-	dd if=/dev/zero of=$(BUILD)/floppy.img bs=1024 count=1440
-	#Format  as FAT12 
-	mkfs.fat -F 12 $(BUILD)/floppy.img
-	#Patch  bootloader onto it 
-	dd if=$(BUILD)/bootloader.bin of=$(BUILD)/floppy.img conv=notrunc bs=512 count=1
+all: $(OS_ISO)
+
+# Explicitly assemble NASM boot.asm
+$(ENTRY_OBJ): kernel/arch/boot.asm
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) $< -o $@
+
+# Pattern rule for compiling C files
+build/kernel/%.o: kernel/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link kernel.elf (ENTRY_OBJ is placed first)
+$(KERNEL_ELF): $(OBJS) kernel/linker.ld
+	$(LD) $(LDFLAGS) $(OBJS) -o $@
+
+# Verify Multiboot header and build bootable GRUB ISO
+$(OS_ISO): $(KERNEL_ELF) iso/boot/grub/grub.cfg
+	@grub-file --is-x86-multiboot $(KERNEL_ELF) || (echo "Error: Not a valid Multiboot binary!" && exit 1)
+	@mkdir -p build/isodir/boot/grub
+	cp $(KERNEL_ELF) build/isodir/boot/kernel.elf
+	cp iso/boot/grub/grub.cfg build/isodir/boot/grub/grub.cfg
+	grub-mkrescue -o $@ build/isodir
+
+# Run in QEMU
+run: $(OS_ISO)
+	qemu-system-i386 -cdrom $(OS_ISO)
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf build
 
-run:
-	qemu-system-x86_64 -hda $(BUILD)/floppy.img
+-include $(DEPS)
+
