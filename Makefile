@@ -1,8 +1,8 @@
-CC := i686-elf-gcc
-LD := i686-elf-ld
+CC := x86_64-elf-gcc
+LD := x86_64-elf-ld
 AS := nasm
 
-ASFLAGS := -f elf32
+ASFLAGS := -f elf64
 CFLAGS  := -ffreestanding -masm=intel -O2 -Wall -Wextra -Ikernel/include -MMD -MP
 LDFLAGS := -T kernel/linker.ld -nostdlib
 
@@ -56,7 +56,7 @@ $(OS_ISO): $(KERNEL_ELF) iso/boot/grub/grub.cfg
 
 # Run in QEMU
 run: $(OS_ISO)
-	qemu-system-i386 -cdrom $(OS_ISO)
+	qemu-system-x86_64 -cdrom $(OS_ISO)
 
 clean:
 	rm -rf build

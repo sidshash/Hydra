@@ -1,15 +1,33 @@
 #include <kernel/tty.h>
-
+#define VGA_WIDTH 80 
+#define VGA_HEIGHT 25
 static struct Char* buffer = (struct Char*) 0xB8000;
-uint8_t row = 80;
-uint8_t column = 20;
+
+
 
 static uint8_t curr_color = VGA_COLOR_WHITE;
-static uint8_t cursor = 0;
-
+static uint8_t curr_row = 0;
+static uint8_t curr_col = 0;
 void k_putc(char c){
-    buffer[cursor] = (struct Char){c, curr_color}; 
-    cursor++;
+    if(c == '\n'){
+        curr_col = 0;
+        curr_row++;
+        if(curr_row == VGA_HEIGHT){
+            curr_row == 0;
+        }
+        return;
+    }
+
+    buffer[curr_row * VGA_WIDTH + curr_col] = (struct Char){c, curr_color}; 
+
+    curr_col++;
+    if(curr_col == VGA_WIDTH){
+        curr_col = 0;
+        curr_row++;
+        if(curr_row == VGA_HEIGHT){
+            curr_row == 0;
+        }
+    }
 }
 
 void k_set_color(uint8_t color){
@@ -19,7 +37,7 @@ void k_set_color(uint8_t color){
 void k_clear(){
     struct Char c = {' ', curr_color};
 
-    for(size_t i = 0; i < row*column; i++){
+    for(size_t i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++){
         buffer[i] = c;
     }
 }

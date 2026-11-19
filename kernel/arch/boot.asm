@@ -1,3 +1,4 @@
+bits 32
 ; Declare constants for the multiboot header.
 MBALIGN  equ  1 << 0            ; align loaded modules on page boundaries
 MEMINFO  equ  1 << 1            ; provide memory map
@@ -28,17 +29,33 @@ align 4
 ; stack is properly aligned and failure to align the stack will result in
 ; undefined behavior.
 section .bss
+align 4096
+page_table_l4:
+    resb 4096
+page_table_l3:
+    resb 4096
+page_table_l2:
+    resb 4096
 align 16
 stack_bottom:
 resb 16384 ; 16 KiB is reserved for stack
 stack_top:
+
+section .rodata
+gdt64:
+    dq 0; null descriptor
+    .code_segment: equ $ - gdt64
+    dq (1 << 43) | (1 << 44) | (1 << 47) | (1 << 53); code segment
+.pointer:
+    dw $ - gdt64 - 1
+    dq gdt64
 
 ; The linker script specifies _start as the entry point to the kernel and the
 ; bootloader will jump to this position once the kernel has been loaded. It
 ; doesn't make sense to return from this function as the bootloader is gone.
 ; Declare _start as a function symbol with the given symbol size.
 section .text
-global _start:function (_start.end - _start)
+global _start:
 _start:
 	; The bootloader has loaded us into 32-bit protected mode on a x86
 	; machine. Interrupts are disabled. Paging is disabled. The processor
@@ -72,20 +89,94 @@ _start:
 	; stack since (pushed 0 bytes so far) and the alignment is thus
 	; preserved and the call is well defined.
         ; note, that if you are building on Windows, C functions may have "_" prefix in assembly: _kernel_main
-	extern kernel_main
-	call kernel_main
 
-	; If the system has nothing more to do, put the computer into an
-	; infinite loop. To do that:
-	; 1) Disable interrupts with cli (clear interrupt enable in eflags).
-	;    They are already disabled by the bootloader, so this is not needed.
-	;    Mind that you might later enable interrupts and return from
-	;    kernel_main (which is sort of nonsensical to do).
-	; 2) Wait for the next interrupt to arrive with hlt (halt instruction).
-	;    Since they are disabled, this will lock up the computer.
-	; 3) Jump to the hlt instruction if it ever wakes up due to a
-	;    non-maskable interrupt occurring or due to system management mode.
+
+    extern kernel_main
+    call feature_test
+    call setup_page_table
+    jmp enable_long_mode
+NO_LONG_MODE:
+    hlt
+
+NO_CPUID:
+    hlt
+
+; Checking availability of cpuid instruction
+bits 32
+feature_test:
+    mov ebx, eax
+    xor eax, 00200000h
+    push eax
+    popfd
+    pushfd
+    pop eax
+    cmp eax, ebx
+    jz NO_CPUID
+
+    mov eax, 0x80000000
+    cpuid
+    cmp eax, 0x80000001
+    jb NO_LONG_MODE
+    
+    mov eax, 0x80000001
+    cpuid
+    test edx, 1 << 29
+    jz NO_LONG_MODE
+    ret 
+
+setup_page_table:
+    ; setup page table 4
+    mov eax, page_table_l3
+    or eax, 0b11
+    mov [page_table_l4], eax
+
+    ; setup page table 3
+    mov eax, page_table_l2
+    or eax, 0b11
+    mov [page_table_l3], eax
+
+    mov ecx, 0
+    .loop:
+        mov eax, 0x200000 
+        mul ecx
+        or eax, 0b10000011
+        mov [page_table_l2 + ecx * 8], eax
+        inc ecx
+        cmp ecx, 512
+        jne .loop
+    ret
+
+
+enable_long_mode:
+    ; load gdt64
+    lgdt [gdt64.pointer]
+    ; setting cr4.pae=1 this is required for switching to long mode
+    mov eax, cr4
+    or eax, 1 << 5
+    mov cr4, eax
+
+    ; setting up cr3 (page table base address)
+    mov eax, page_table_l4
+    mov cr3, eax
+
+    ; enable long mode set efer.lme=1
+    mov ecx, 0c0000080h; efer msr number
+    rdmsr
+    or eax, 1 << 8
+    wrmsr
+
+    ;enable paging to activate long mode set cr0.pg = 1
+    mov eax, cr0
+    or eax, 1 << 31
+    mov cr0, eax
+    jmp gdt64.code_segment:.kernel_entry
+
+bits 64
+.kernel_entry:
+ 
+    call kernel_main
 	cli
 .hang:	hlt
 	jmp .hang
 .end:
+
