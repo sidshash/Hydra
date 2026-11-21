@@ -1,5 +1,3 @@
-#pragma once
-
 #include <stdint.h>
 
 
@@ -12,10 +10,10 @@ struct GDT_ENTRY{
     uint8_t base_higher;
     uint32_t base_highest;
     uint32_t reserved;
-} __attributes__ ((packed));
+} __attribute__ ((packed));
 
 struct GDT{
     uint16_t limit;
     uint16_t base;
 
-} __attributes__((packed));
+} __attribute__((packed));

@@ -173,8 +173,14 @@ enable_long_mode:
 
 bits 64
 .kernel_entry:
- 
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
     call kernel_main
+
 	cli
 .hang:	hlt
 	jmp .hang

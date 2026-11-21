@@ -1,5 +1,5 @@
 #include <kernel/tty.h>
-
+#include <arch/idt.h>
 
 void kernel_main(void){
     
@@ -9,7 +9,6 @@ void kernel_main(void){
     if(sizeof(void* ) == 8) {
         k_puts("Running in 64-bit Long Mode\n"); 
     }
-    while(1){
-
-    }
+    idt_init();
+    idt_load();
 }

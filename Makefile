@@ -3,7 +3,7 @@ LD := x86_64-elf-ld
 AS := nasm
 
 ASFLAGS := -f elf64
-CFLAGS  := -ffreestanding -masm=intel -O2 -Wall -Wextra -Ikernel/include -MMD -MP
+CFLAGS  := -ffreestanding -masm=intel -mgeneral-regs-only -O2 -Wall -Wextra -Ikernel/include -MMD -MP
 LDFLAGS := -T kernel/linker.ld -nostdlib
 
 ENTRY_OBJ := build/kernel/arch/boot.o
@@ -11,6 +11,7 @@ ENTRY_OBJ := build/kernel/arch/boot.o
 C_SRCS := kernel/main.c \
           $(wildcard kernel/core/*.c) \
           $(wildcard kernel/drivers/*.c) \
+          $(wildcard kernel/arch/*.c) \
           $(wildcard kernel/mm/*.c) 
 
 ASM_SRCS := $(filter-out kernel/arch/boot.asm, $(wildcard kernel/arch/*.asm))
