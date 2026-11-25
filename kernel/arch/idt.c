@@ -5,13 +5,6 @@
 #define IDT_GATE_TRAP 0b1 << 7 | 0b00 << 5 | 0b0 << 4 | 0xf
 #define IDT_GATE_INTERRUPT_RING3 0b1 << 7 | 0b11 << 5 | 0b0 << 4 | 0xe
 
-
-
-
-
-
-
-
 __attribute__((aligned(16)))
 static IDT_ENTRY idt[256] = {0};
 static IDTR idtr = {sizeof(idt) - 1, (uint64_t) &idt};
@@ -62,7 +55,3 @@ void idt_load(){
     __asm__ volatile("lidt %0" :: "m"(idtr));   
     __asm__ volatile("sti");
 }
-
-
-
-

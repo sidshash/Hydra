@@ -1,9 +1,10 @@
+MAKEFLAGS += -j$(shell nproc)
 CC := x86_64-elf-gcc
 LD := x86_64-elf-ld
 AS := nasm
 
 ASFLAGS := -f elf64
-CFLAGS  := -ffreestanding -masm=intel -mgeneral-regs-only -O2 -Wall -Wextra -Ikernel/include -MMD -MP
+CFLAGS  := -DDEBUG -ffreestanding -masm=intel -mcmodel=kernel -fno-pic -fno-pie -mgeneral-regs-only -O2 -Wall -Wextra -Ikernel/include -MMD -MP
 LDFLAGS := -T kernel/linker.ld -nostdlib
 
 ENTRY_OBJ := build/kernel/arch/boot.o
@@ -12,6 +13,7 @@ C_SRCS := kernel/main.c \
           $(wildcard kernel/core/*.c) \
           $(wildcard kernel/drivers/*.c) \
           $(wildcard kernel/arch/*.c) \
+          $(wildcard kernel/scheduling/*.c) \
           $(wildcard kernel/mm/*.c) 
 
 ASM_SRCS := $(filter-out kernel/arch/boot.asm, $(wildcard kernel/arch/*.asm))
@@ -49,7 +51,7 @@ $(KERNEL_ELF): $(OBJS) kernel/linker.ld
 
 # Verify Multiboot header and build bootable GRUB ISO
 $(OS_ISO): $(KERNEL_ELF) iso/boot/grub/grub.cfg
-	@grub-file --is-x86-multiboot $(KERNEL_ELF) || (echo "Error: Not a valid Multiboot binary!" && exit 1)
+	@grub-file --is-x86-multiboot2 $(KERNEL_ELF) || (echo "Error: Not a valid Multiboot2 binary!" && exit 1)
 	@mkdir -p build/isodir/boot/grub
 	cp $(KERNEL_ELF) build/isodir/boot/kernel.elf
 	cp iso/boot/grub/grub.cfg build/isodir/boot/grub/grub.cfg

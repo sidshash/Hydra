@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
 	VGA_COLOR_BLUE = 1,
@@ -21,13 +22,21 @@ enum vga_color {
 	VGA_COLOR_WHITE = 15,
 };
 
-struct Char{
-    uint8_t character;
-    uint8_t color;
+struct Char {
+	uint8_t character;
+	uint8_t color;
 };
 
-
+#ifdef DEBUG
 void k_putc(char c);
-void k_puts(char* s);
-void k_clear();
+void k_puts(const char* s);
+void k_puti(uint64_t i);
+void k_clear(void);
 void k_set_color(uint8_t color);
+#else
+#define k_putc(c)          ((void)0)
+#define k_puts(s)          ((void)0)
+#define k_puti(i)          ((void)0)
+#define k_clear()          ((void)0)
+#define k_set_color(color) ((void)0)
+#endif
