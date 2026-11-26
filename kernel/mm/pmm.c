@@ -9,9 +9,8 @@ extern uint64_t kernel_end[];
 
 uint64_t usable_memory_low;
 uint64_t usable_memory_high;
-
 // 1 byte = 8 bit; toh 1 byte bitmap = 8 frames; 
-uint64_t frame_bitmap[MAX_BITMAP_SIZE];
+uint64_t frame_bitmap[MAX_BITMAP_SIZE] = {0};
 
 static uint64_t address_to_frame(uint64_t address){
     return (address - usable_memory_low) / 4096;
@@ -27,19 +26,11 @@ static void set_frame_status(uint64_t frame_address, uint8_t status){
 
 static void init_kernel_frames(){
 
-            k_puts("kernel_end: ");
-            k_puti((uint64_t)kernel_end);
-            k_putc('\n');
-
             uint64_t* frame_pointer = kernel_start;
             while(frame_pointer <= kernel_end){
                 set_frame_status((uint64_t)frame_pointer, 1);
                 frame_pointer += 4096 / sizeof(uint64_t*);
             }
-
-            k_puts("64 frames: ");
-            k_puti(frame_bitmap[0]);
-            k_putc('\n');
 }
 
 // memory length % 4096 (4kb) = remainder; memory length - remainder -> completely divisble by 4kb frames
@@ -61,7 +52,7 @@ uint64_t pmm_alloc(){
 
         uint8_t bit = __builtin_ctzll(~frame_bitmap[i]);
 
-        uint64_t frame_address = (i * 64 + bit) * 4096;
+        uint64_t frame_address = 0x100000ULL + ((i * 64 + bit) * 4096);
 
         set_frame_status(frame_address, 1);
 
@@ -71,4 +62,8 @@ uint64_t pmm_alloc(){
 
 void pmm_free(){
 
+}
+
+uint64_t pmm_get_kernel_size(){
+    return kernel_end - kernel_start;
 }

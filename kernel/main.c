@@ -2,9 +2,18 @@
 #include <arch/idt.h>
 #include <scheduling/tss.h>
 #include <mm/pmm.h>
+#include <mm/vmm.h>
 #include <arch/multiboot_parser.h>
+
+
 void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_index){
 
+    
+    parse_multiboot_structure(multiboot_index);
+
+    pmm_init();
+    vmm_init();
+    
     idt_init();
     idt_load();
     tss_init();
@@ -17,8 +26,5 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_index){
     if(sizeof(void* ) == 8) {
         k_puts("Running in 64-bit Long Mode\n"); 
     }
-    
-    parse_multiboot_structure(multiboot_index);
-    pmm_init();
     
 }

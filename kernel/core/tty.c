@@ -5,6 +5,12 @@
 
 #define VGA_WIDTH 80 
 #define VGA_HEIGHT 25
+
+struct Char {
+	uint8_t character;
+	uint8_t color;
+};
+
 static struct Char* buffer = (struct Char*) 0xB8000;
 
 
@@ -73,6 +79,10 @@ void k_puti(uint64_t n)
         }
     }
     k_puts(&buf[i]);
+}
+
+void tty_set_buffer_ptr(uintptr_t new_ptr){
+    buffer = (struct Char*) (new_ptr + (uintptr_t) buffer);
 }
 
 #endif

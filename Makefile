@@ -4,7 +4,7 @@ LD := x86_64-elf-ld
 AS := nasm
 
 ASFLAGS := -f elf64
-CFLAGS  := -DDEBUG -ffreestanding -masm=intel -mcmodel=kernel -fno-pic -fno-pie -mgeneral-regs-only -O2 -Wall -Wextra -Ikernel/include -MMD -MP
+CFLAGS  := -DDEBUG -g -ffreestanding -masm=intel -mcmodel=kernel -fno-pic -fno-pie -mgeneral-regs-only -O2 -Wall -Wextra -Ikernel/include -MMD -MP
 LDFLAGS := -T kernel/linker.ld -nostdlib
 
 ENTRY_OBJ := build/kernel/arch/boot.o

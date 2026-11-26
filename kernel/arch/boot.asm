@@ -49,6 +49,7 @@ section .boot alloc exec nowrite
 global _start:
 extern kernel_main
 _start:
+    mov esp, stack_top
     mov [multiboot_magic], eax
     mov [multiboot_index], ebx
     call feature_test
@@ -145,11 +146,12 @@ bits 64
 
 
 section .text
+extern KERNEL_VMA
 higher_half_entry:
   mov rdi, [multiboot_magic]
   mov rsi, [multiboot_index]  
 
-  mov rax, 0xFFFFFFFF80000000
+  mov rax, KERNEL_VMA
   add rsp, rax
 
   call kernel_main
