@@ -44,13 +44,6 @@ void parse_multiboot_structure(uint32_t multiboot_index){
         if(mmap_entry->base_address >= 0x100000 && mmap_entry->type == 1){ //0x100000 (1Mib), type 1 = available, 2 = not available
             //log info of page which matches the criteria
             // multiple memory segments ko merge nahi kar raha. abhi aise hi rehne dete hain baadme dekhenge
-            k_puts("base_address: ");
-            k_puti(mmap_entry->base_address);
-            k_puts(", length: ");
-            k_puti(mmap_entry->length);
-            k_puts(", type: ");
-            k_puti(mmap_entry->type);
-            k_puts("\n");
             avilable_memory = *mmap_entry;
             return;// first segment use kar raha hai bass, baadme change karna hai
         }

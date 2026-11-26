@@ -1,18 +1,46 @@
-#include <stdint.h>
 #include <arch/multiboot_parser.h>
 #include <kernel/tty.h>
 #include <mm/pmm.h>
 
+#define MAX_BITMAP_SIZE 1024
 
-typedef struct {
-
-} __attribute__((packed));
+extern uint64_t kernel_start[];
+extern uint64_t kernel_end[];
 
 uint64_t usable_memory_low;
 uint64_t usable_memory_high;
 
 // 1 byte = 8 bit; toh 1 byte bitmap = 8 frames; 
-uint64_t* frame_bitmap[1024];
+uint64_t frame_bitmap[MAX_BITMAP_SIZE];
+
+static uint64_t address_to_frame(uint64_t address){
+    return (address - usable_memory_low) / 4096;
+}
+
+static void set_frame_status(uint64_t frame_address, uint8_t status){
+    uint64_t frame = address_to_frame(frame_address);
+    uint64_t frame_index = frame / 64;
+    uint8_t frame_bit = frame % 64;
+    frame_bitmap[frame_index] &= ~(1ULL << frame_bit);
+    frame_bitmap[frame_index] |= ((uint64_t)(1 & status) << frame_bit);
+}
+
+static void init_kernel_frames(){
+
+            k_puts("kernel_end: ");
+            k_puti((uint64_t)kernel_end);
+            k_putc('\n');
+
+            uint64_t* frame_pointer = kernel_start;
+            while(frame_pointer <= kernel_end){
+                set_frame_status((uint64_t)frame_pointer, 1);
+                frame_pointer += 4096 / sizeof(uint64_t*);
+            }
+
+            k_puts("64 frames: ");
+            k_puti(frame_bitmap[0]);
+            k_putc('\n');
+}
 
 // memory length % 4096 (4kb) = remainder; memory length - remainder -> completely divisble by 4kb frames
 void pmm_init(){
@@ -20,17 +48,27 @@ void pmm_init(){
             uint64_t memory_length = mmap_entry.length - (mmap_entry.length % 4096);
             usable_memory_low = mmap_entry.base_address;
             usable_memory_high = usable_memory_low + memory_length;
-            k_puts("total pages: ");
-            k_puti(memory_length / 4096);
-            k_puts(", bitmap-size: ");
-            k_puti(memory_length/4096/8);
-            k_putc('\n');
+            init_kernel_frames();
 }
 
-void pmm_alloc(){
 
+
+uint64_t pmm_alloc(){
+    for(uint64_t i = 0; i < MAX_BITMAP_SIZE; i++){
+        if(frame_bitmap[i] == ~0ULL){
+            continue;
+        }
+
+        uint8_t bit = __builtin_ctzll(~frame_bitmap[i]);
+
+        uint64_t frame_address = (i * 64 + bit) * 4096;
+
+        set_frame_status(frame_address, 1);
+
+        return frame_address;
+    }
 }
 
 void pmm_free(){
-    
+
 }

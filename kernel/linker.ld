@@ -3,6 +3,7 @@ KERNEL_VMA = 0xFFFFFFFF80000000;
 SECTIONS
 {
 	. = 1M;
+	kernel_start = . ;
 
   .boot ALIGN(4K) :
   {
@@ -41,5 +42,6 @@ SECTIONS
 		*(COMMON)
 		*(.bss*)
 	}
+	kernel_end = . - KERNEL_VMA;
 
 }
