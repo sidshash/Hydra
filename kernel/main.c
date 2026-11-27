@@ -5,6 +5,7 @@
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 #include <arch/multiboot_parser.h>
+#include <scheduling/task.h>
 
 
 void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_index){
@@ -27,5 +28,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_index){
     if(sizeof(void* ) == 8) {
         k_puts("Running in 64-bit Long Mode\n"); 
     }
-    
+
+    //task testing remove later
+    task_start();
+
 }

@@ -64,6 +64,6 @@ void pmm_free(){
 
 }
 
-uint64_t pmm_get_kernel_size(){
-    return kernel_end - kernel_start;
+uintptr_t pmm_get_usable_memory_high(){
+    return usable_memory_high;
 }
