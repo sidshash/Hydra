@@ -29,6 +29,4 @@ typedef struct {
   SEGMENT_DESCRIPTOR_16B tss;
 } __attribute__ ((packed)) GDT;
 
-void init_gdt();
-
-void load_gdt();
+void gdt_init();

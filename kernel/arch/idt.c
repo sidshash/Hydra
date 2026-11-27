@@ -79,6 +79,8 @@ void idt_init(){
             set_idt_descriptor(entry, (uint64_t) exception_handler_no_error, IDT_GATE_INTERRUPT);
         }
     }
+
+    idt_load();
 }
 
 void idt_load(){
